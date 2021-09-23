@@ -23,7 +23,7 @@
 #endif
 
 #ifdef __MINGW32__
-#define LUASOCKET_INET_PTON
+//#define LUASOCKET_INET_PTON
 #endif
 
 #ifndef _WIN32
