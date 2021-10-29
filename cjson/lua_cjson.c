@@ -46,6 +46,8 @@
 
 #include "strbuf.h"
 #include "fpconv.h"
+#include <stdbool.h>
+#include <stdlib.h>
 
 #ifndef CJSON_MODNAME
 #define CJSON_MODNAME   "cjson"
@@ -82,6 +84,7 @@ typedef enum {
     T_ARR_END,
     T_STRING,
     T_NUMBER,
+	T_INTEGER,
     T_BOOLEAN,
     T_NULL,
     T_COLON,
@@ -98,7 +101,8 @@ static const char *json_token_type_name[] = {
     "T_ARR_BEGIN",
     "T_ARR_END",
     "T_STRING",
-    "T_NUMBER",
+	"T_NUMBER",
+	"T_INTEGER",
     "T_BOOLEAN",
     "T_NULL",
     "T_COLON",
@@ -144,6 +148,7 @@ typedef struct {
     union {
         const char *string;
         double number;
+        long long nValue;
         int boolean;
     } value;
     int string_len;
@@ -994,6 +999,44 @@ static int json_is_invalid_number(json_parse_t *json)
 
 static void json_next_number_token(json_parse_t *json, json_token_t *token)
 {
+    // 通过小数点来判断整型和浮点型
+	bool isInteger = true;
+    for (const char *p = json->ptr; true; p++)
+    {
+        char ch = *p;
+        if (ch == '.')
+        {
+            isInteger = false;
+            break;
+        }
+		if (!(ch == '+' || ch == '-' || (ch >= '0' && ch <= '9')
+			|| (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')))
+		{
+            break;
+        }
+    }
+    if (isInteger)
+    {
+		char* endptr;
+		token->type = T_INTEGER;
+		const char* p = json->ptr;
+        if (p[0] == '-') p++;
+		if (p[0] == '0' && (p[1] | 0x20) == 'x')
+        {
+            token->value.nValue = strtoll(json->ptr, &endptr, 16);
+        }
+        else
+        {
+			token->value.nValue = strtoll(json->ptr, &endptr, 10);
+        }
+		if (json->ptr == endptr)
+			json_set_token_error(token, json, "invalid integer");
+		else
+			json->ptr = endptr;     /* Skip the processed integer */
+
+        return;
+    }
+
     char *endptr;
 
     token->type = T_NUMBER;
@@ -1227,9 +1270,12 @@ static void json_process_value(lua_State *l, json_parse_t *json,
     case T_STRING:
         lua_pushlstring(l, token->value.string, token->string_len);
         break;;
-    case T_NUMBER:
-        lua_pushnumber(l, token->value.number);
-        break;;
+	case T_NUMBER:
+		lua_pushnumber(l, token->value.number);
+		break;;
+	case T_INTEGER:
+		lua_pushinteger(l, token->value.nValue);
+		break;;
     case T_BOOLEAN:
         lua_pushboolean(l, token->value.boolean);
         break;;
