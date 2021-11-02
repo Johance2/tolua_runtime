@@ -115,7 +115,7 @@ static int lua53_rawgetp(lua_State *L, int idx, const void *p)
 
 static const char state_name[] = PB_STATE;
 
-enum lpb_Int64Mode { LPB_NUMBER, LPB_STRING, LPB_HEXSTRING};
+enum lpb_Int64Mode { LPB_NUMBER, LPB_STRING, LPB_HEXSTRING };
 enum lpb_DefMode   { LPB_DEFDEF, LPB_COPYDEF, LPB_METADEF, LPB_NODEF };
 
 typedef struct lpb_State {
@@ -318,15 +318,6 @@ static uint64_t lpb_checkinteger(lua_State *L, int idx) {
     return v;
 }
 
-LUALIB_API void tolua_pushint64(lua_State* L, int64_t n);
-LUALIB_API void tolua_pushuint64(lua_State *L, uint64_t n);
-
-static void lpb_pushinteger64(lua_State *L, int64_t n, int mode) {
-	tolua_pushuint64(L, n);
-}
-static void lpb_pushuninteger64(lua_State *L, uint64_t n, int mode) {
-	tolua_pushint64(L, n);
-}
 static void lpb_pushinteger(lua_State *L, int64_t n, int mode) {
     if (mode != LPB_NUMBER && (n < INT_MIN || n > INT_MAX)) {
         char buff[32], *p = buff + sizeof(buff) - 1;
@@ -441,8 +432,6 @@ static void lpb_readtype(lua_State *L, lpb_State *LS, int type, lpb_SliceEx *s) 
     lpb_Value v;
     switch (type) {
 #define pushinteger(n) lpb_pushinteger((L), (n), LS->int64_mode)
-#define pushinteger64(n) lpb_pushinteger64((L), (n), LS->int64_mode)
-#define pushuinteger64(n) lpb_pushuninteger64((L), (n), LS->int64_mode)
     case PB_Tbool:  case PB_Tenum:
     case PB_Tint32: case PB_Tuint32: case PB_Tsint32:
     case PB_Tint64: case PB_Tuint64: case PB_Tsint64:
@@ -454,9 +443,9 @@ static void lpb_readtype(lua_State *L, lpb_State *LS, int type, lpb_SliceEx *s) 
         case PB_Tint32:  pushinteger((int32_t)v.u64); break;
         case PB_Tuint32: pushinteger((uint32_t)v.u64); break;
         case PB_Tsint32: pushinteger(pb_decode_sint32((uint32_t)v.u64)); break;
-        case PB_Tint64:  pushinteger64((int64_t)v.u64); break;
-        case PB_Tuint64: pushuinteger64((uint64_t)v.u64); break;
-        case PB_Tsint64: pushinteger64(pb_decode_sint64(v.u64)); break;
+        case PB_Tint64:  pushinteger((int64_t)v.u64); break;
+        case PB_Tuint64: pushinteger((uint64_t)v.u64); break;
+        case PB_Tsint64: pushinteger(pb_decode_sint64(v.u64)); break;
         }
         break;
     case PB_Tfloat:
@@ -477,8 +466,8 @@ static void lpb_readtype(lua_State *L, lpb_State *LS, int type, lpb_SliceEx *s) 
             luaL_error(L, "invalid fixed64 value at offset %d", lpb_offset(s));
         switch (type) {
         case PB_Tdouble:   lua_pushnumber(L, pb_decode_double(v.u64)); break;
-        case PB_Tfixed64:  pushuinteger64(v.u64); break;
-        case PB_Tsfixed64: pushinteger64((int64_t)v.u64); break;
+        case PB_Tfixed64:  pushinteger(v.u64); break;
+        case PB_Tsfixed64: pushinteger((int64_t)v.u64); break;
         }
         break;
     case PB_Tbytes:
