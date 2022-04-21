@@ -86,6 +86,6 @@ gcc -m32 -O2 -std=gnu99 -shared \
 	-Iluasocket \
 	-Ilpeg \
 	-lws2_32 \
- 	-Wl,--whole-archive window/x86/$lualibname.a -Wl,--no-whole-archive -static-libgcc -static-libstdc++
+ 	-Wl,--whole-archive window/x86/$lualibname.a -Wl,--no-whole-archive -static-libgcc -static-libstdc++ -D _WIN32_WINNT=0x0600
 
 echo "build tolua.dll success" 	

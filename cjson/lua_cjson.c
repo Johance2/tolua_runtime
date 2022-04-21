@@ -592,6 +592,14 @@ static void json_append_array(lua_State *l, json_config_t *cfg, int current_dept
 static void json_append_number(lua_State *l, json_config_t *cfg,
                                strbuf_t *json, int lindex)
 {
+	if(lua_isinteger(l, lindex))
+	{
+		lua_Integer i_num = lua_tointeger(l, lindex);
+		char buf[100]; 
+		sprintf(buf, "%lld", i_num);
+         strbuf_append_mem(json, buf, strlen(buf));
+		return;
+	}
     double num = lua_tonumber(l, lindex);
     int len;
 
